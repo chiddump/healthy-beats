@@ -9,7 +9,7 @@ import authRoutes from "./routes/authRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 
 // DB
-import pool from "./models/db.js";
+//import pool from "./models/db.js";
 
 const app = express(); // 👈 app MUST be created first
 
@@ -35,9 +35,12 @@ app.get("/", (req, res) => {
   res.send("Healthy Beats API running");
 });
 
-app.get("/db-test", async (req, res) => {
+'''app.get("/db-test", async (req, res) => {
   const result = await pool.query("SELECT NOW()");
   res.json({ success: true, time: result.rows[0] });
+});'''
+app.get("/health", (req, res) => {
+  res.json({ status: "OK", env: process.env.NODE_ENV || "no-env" });
 });
 
 const PORT = process.env.PORT || 5000;
