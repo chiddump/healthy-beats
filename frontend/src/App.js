@@ -39,9 +39,10 @@ function App() {
       }
 
       setMessage("Signup successful ✅");
-    } catch {
-      setMessage("Backend is waking up. Try again.");
-    }
+    }catch {
+  setMessage("Server error. Please try again.");
+}
+
   };
 
   const login = async () => {
@@ -61,8 +62,9 @@ function App() {
       localStorage.setItem("token", res.data.token);
       setMessage("Login successful ✅");
     } catch {
-      setMessage("Backend is waking up. Try again.");
-    }
+  setMessage("Server error. Please try again.");
+}
+
   };
 
   const getProfile = async () => {
