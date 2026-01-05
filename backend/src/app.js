@@ -14,7 +14,16 @@ import pool from "./models/db.js";
 const app = express(); // 👈 app MUST be created first
 
 // MIDDLEWARE
-app.use(cors());
+app.use(
+  cors({
+    origin: [
+      "http://localhost:3000",
+      "https://healthybeats.vercel.app"
+    ],
+    credentials: true
+  })
+);
+
 app.use(express.json());
 
 // ROUTES
