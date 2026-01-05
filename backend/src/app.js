@@ -33,10 +33,15 @@ app.get("/db-test", async (req, res) => {
     const result = await pool.query("SELECT NOW()");
     res.json({ success: true, time: result.rows[0] });
   } catch (err) {
-    console.error("DB ERROR:", err.message);
-    res.status(500).json({ error: err.message });
+    console.error("DB TEST ERROR:", err);
+    res.status(500).json({
+      error: err.message,
+      code: err.code,
+      detail: err.detail
+    });
   }
 });
+
 
 app.use("/api/auth", authRoutes);
 app.use("/api/user", userRoutes);
