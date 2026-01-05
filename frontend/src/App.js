@@ -9,54 +9,62 @@ function App() {
   const [message, setMessage] = useState("");
   const [profile, setProfile] = useState(null);
 
-  // ✅ SIGNUP
-  const signup = async () => {
-    setMessage("");
+  const safeFetch = async (url, options, retry = true) => {
     try {
-      const res = await fetch(`${API_BASE}/api/auth/signup`, {
+      const res = await fetch(url, options);
+      const data = await res.json();
+      return { ok: res.ok, data };
+    } catch (err) {
+      if (retry) {
+        // ⏳ backend waking up – retry once
+        await new Promise((r) => setTimeout(r, 3000));
+        return safeFetch(url, options, false);
+      }
+      throw err;
+    }
+  };
+
+  const signup = async () => {
+    setMessage("Connecting to server...");
+    try {
+      const res = await safeFetch(`${API_BASE}/api/auth/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name, email, password }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        setMessage(data.error || "Signup failed");
+        setMessage(res.data.error || "Signup failed");
         return;
       }
 
       setMessage("Signup successful ✅");
-    } catch (err) {
-      setMessage("Server error");
+    } catch {
+      setMessage("Backend is waking up. Try again.");
     }
   };
 
-  // ✅ LOGIN
   const login = async () => {
-    setMessage("");
+    setMessage("Connecting to server...");
     try {
-      const res = await fetch(`${API_BASE}/api/auth/login`, {
+      const res = await safeFetch(`${API_BASE}/api/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email, password }),
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        setMessage(data.error || "Login failed");
+        setMessage(res.data.error || "Login failed");
         return;
       }
 
-      localStorage.setItem("token", data.token);
+      localStorage.setItem("token", res.data.token);
       setMessage("Login successful ✅");
-    } catch (err) {
-      setMessage("Server error");
+    } catch {
+      setMessage("Backend is waking up. Try again.");
     }
   };
 
-  // ✅ GET PROFILE
   const getProfile = async () => {
     setMessage("");
     try {
@@ -66,27 +74,22 @@ function App() {
         return;
       }
 
-      const res = await fetch(`${API_BASE}/api/user/profile`, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
+      const res = await safeFetch(`${API_BASE}/api/user/profile`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
-      const data = await res.json();
-
       if (!res.ok) {
-        setMessage(data.error || "Unauthorized");
+        setMessage(res.data.error || "Unauthorized");
         return;
       }
 
-      setProfile(data.user);
+      setProfile(res.data.user);
       setMessage("Profile loaded ✅");
-    } catch (err) {
+    } catch {
       setMessage("Server error");
     }
   };
 
-  // ✅ LOGOUT
   const logout = () => {
     localStorage.removeItem("token");
     setProfile(null);
@@ -97,39 +100,20 @@ function App() {
     <div style={{ maxWidth: 400, margin: "40px auto", textAlign: "center" }}>
       <h2>Healthy Beats</h2>
 
-      <input
-        placeholder="Name"
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-      />
+      <input placeholder="Name" value={name} onChange={(e) => setName(e.target.value)} />
       <br /><br />
-
-      <input
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+      <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
       <br /><br />
-
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+      <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} />
       <br /><br />
 
       <button onClick={signup}>Signup</button>
-      <button onClick={login} style={{ marginLeft: 10 }}>
-        Login
-      </button>
+      <button onClick={login} style={{ marginLeft: 10 }}>Login</button>
 
       <hr />
 
       <button onClick={getProfile}>Get Profile</button>
-      <button onClick={logout} style={{ marginLeft: 10 }}>
-        Logout
-      </button>
+      <button onClick={logout} style={{ marginLeft: 10 }}>Logout</button>
 
       {message && <p>{message}</p>}
 
