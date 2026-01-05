@@ -49,6 +49,7 @@ function App() {
 
       if (res.ok) {
         setMessage("Signup successful ✅ Please login");
+        setMessage("");
         setIsSignup(false);
         setName("");
         setPassword("");
