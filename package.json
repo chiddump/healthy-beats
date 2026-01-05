@@ -1,5 +1,7 @@
 {
-  "dependencies": {
-    "bcryptjs": "^3.0.3"
+  "name": "healthy-beats",
+  "private": true,
+  "scripts": {
+    "build": "cd frontend && npm install && npm run build"
   }
 }
