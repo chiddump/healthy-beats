@@ -181,3 +181,41 @@ app.get(
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
+/* ===== ADD PRODUCT (ADMIN ONLY) ===== */
+app.post(
+  "/api/admin/products",
+  authMiddleware,
+  adminMiddleware,
+  async (req, res) => {
+    try {
+      const { name, price, image } = req.body;
+
+      if (!name || !price) {
+        return res.status(400).json({ error: "Name and price required" });
+      }
+
+      await pool.query(
+        "INSERT INTO products (id, name, price, image) VALUES ($1,$2,$3,$4)",
+        [crypto.randomUUID(), name, price, image]
+      );
+
+      res.status(201).json({ message: "Product added successfully" });
+    } catch (err) {
+      console.error("Add product error:", err);
+      res.status(500).json({ error: "Server error" });
+    }
+  }
+);
+
+/* ===== GET PRODUCTS (PUBLIC) ===== */
+app.get("/api/products", async (req, res) => {
+  try {
+    const result = await pool.query(
+      "SELECT * FROM products ORDER BY created_at DESC"
+    );
+    res.json(result.rows);
+  } catch (err) {
+    console.error("Get products error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
