@@ -1,169 +1,144 @@
+// backend/src/app.js
 import express from "express";
 import cors from "cors";
-import dotenv from "dotenv";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import pkg from "pg";
 
-dotenv.config();
-
-const { Pool } = pkg;
 const app = express();
+const PORT = process.env.PORT || 5000;
+const JWT_SECRET = process.env.JWT_SECRET;
 
-/* =======================
-   BASIC MIDDLEWARE
-======================= */
+// ====== BASIC CHECKS ======
+if (!JWT_SECRET) {
+  console.error("❌ JWT_SECRET is missing in environment variables");
+  process.exit(1);
+}
+
+// ====== MIDDLEWARE ======
 app.use(express.json());
 
 app.use(
   cors({
-    origin: [
-      "http://localhost:3000",
-      "https://healthybeats.vercel.app",
-    ],
+    origin: "*", // OK for now (can restrict later)
     credentials: true,
   })
 );
 
-/* =======================
-   DATABASE CONNECTION
-======================= */
-const pool = new Pool({
-  connectionString: process.env.DATABASE_URL,
-  ssl: { rejectUnauthorized: false },
-});
+// ====== IN-MEMORY USER STORE (FOR NOW) ======
+// ⚠️ This resets on every restart — fine for testing
+const users = [];
 
-/* =======================
-   HEALTH CHECK
-======================= */
+// ====== HEALTH CHECK ======
 app.get("/", (req, res) => {
-  res.json({ success: true, message: "Healthy Beats API running" });
+  res.json({
+    success: true,
+    message: "Healthy Beats API running",
+    time: new Date().toISOString(),
+  });
 });
 
-/* =======================
-   DB TEST
-======================= */
-app.get("/db-test", async (req, res) => {
-  try {
-    const result = await pool.query("SELECT NOW()");
-    res.json({ success: true, time: result.rows[0] });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Database connection failed" });
-  }
+// ====== DB TEST (NO DB YET) ======
+app.get("/db-test", (req, res) => {
+  res.json({
+    success: true,
+    note: "Database not connected yet",
+    time: new Date().toISOString(),
+  });
 });
 
-/* =======================
-   AUTH MIDDLEWARE
-======================= */
-const auth = (req, res, next) => {
-  const token = req.headers.authorization?.split(" ")[1];
-  if (!token) return res.status(401).json({ error: "No token" });
-
-  try {
-    req.user = jwt.verify(token, process.env.JWT_SECRET);
-    next();
-  } catch {
-    res.status(401).json({ error: "Invalid token" });
-  }
-};
-
-/* =======================
-   SIGNUP
-======================= */
+// ====== SIGNUP ======
 app.post("/api/auth/signup", async (req, res) => {
   try {
     const { name, email, password } = req.body;
 
-    if (!name || !email || !password)
+    if (!name || !email || !password) {
       return res.status(400).json({ error: "All fields required" });
+    }
 
-    const exists = await pool.query(
-      "SELECT id FROM users WHERE email=$1",
-      [email]
-    );
-
-    if (exists.rows.length > 0)
+    const existingUser = users.find((u) => u.email === email);
+    if (existingUser) {
       return res.status(400).json({ error: "User already exists" });
+    }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-    const result = await pool.query(
-      "INSERT INTO users (name, email, password) VALUES ($1,$2,$3) RETURNING id,email",
-      [name, email, hashed]
-    );
+    const user = {
+      id: crypto.randomUUID(),
+      name,
+      email,
+      password: hashedPassword,
+    };
 
-    const token = jwt.sign(
-      { id: result.rows[0].id, email },
-      process.env.JWT_SECRET,
-      { expiresIn: "1d" }
-    );
+    users.push(user);
 
-    res.json({ message: "Signup successful", token });
+    res.status(201).json({
+      message: "User registered successfully",
+    });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Signup failed" });
+    console.error("Signup error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-/* =======================
-   LOGIN
-======================= */
+// ====== LOGIN ======
 app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
-    const result = await pool.query(
-      "SELECT * FROM users WHERE email=$1",
-      [email]
-    );
+    const user = users.find((u) => u.email === email);
+    if (!user) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
-    if (result.rows.length === 0)
-      return res.status(400).json({ error: "Invalid credentials" });
-
-    const user = result.rows[0];
-
-    const match = await bcrypt.compare(password, user.password);
-    if (!match)
-      return res.status(400).json({ error: "Invalid credentials" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
 
     const token = jwt.sign(
       { id: user.id, email: user.email },
-      process.env.JWT_SECRET,
+      JWT_SECRET,
       { expiresIn: "1d" }
     );
 
-    res.json({ message: "Login successful", token });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Login failed" });
-  }
-});
-
-/* =======================
-   PROFILE
-======================= */
-app.get("/api/auth/profile", auth, async (req, res) => {
-  try {
-    const result = await pool.query(
-      "SELECT id, name, email FROM users WHERE id=$1",
-      [req.user.id]
-    );
-
     res.json({
-      message: "Profile accessed successfully",
-      user: result.rows[0],
+      message: "Login successful",
+      token,
     });
   } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: "Profile failed" });
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Server error" });
   }
 });
 
-/* =======================
-   START SERVER
-======================= */
-const PORT = process.env.PORT || 5000;
+// ====== AUTH MIDDLEWARE ======
+function authMiddleware(req, res, next) {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({ error: "No token provided" });
+  }
+
+  const token = authHeader.split(" ")[1];
+
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    req.user = decoded;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: "Invalid token" });
+  }
+}
+
+// ====== PROFILE ======
+app.get("/api/user/profile", authMiddleware, (req, res) => {
+  res.json({
+    message: "Profile accessed successfully",
+    user: req.user,
+  });
+});
+
+// ====== START SERVER ======
 app.listen(PORT, () => {
-  console.log("Server running on port", PORT);
+  console.log(`✅ Server running on port ${PORT}`);
 });
