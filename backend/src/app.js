@@ -19,7 +19,7 @@ if (!JWT_SECRET) {
 app.use(express.json());
 app.use(
   cors({
-    origin: "*",
+    origin: "*", // lock later to frontend domain
     credentials: true,
   })
 );
@@ -39,79 +39,8 @@ app.get("/db-test", async (req, res) => {
     const result = await pool.query("SELECT NOW()");
     res.json({ success: true, time: result.rows[0] });
   } catch (err) {
-    console.error("DB test error:", err);
+    console.error(err);
     res.status(500).json({ error: "Database connection failed" });
-  }
-});
-
-/* ===== SIGNUP ===== */
-app.post("/api/auth/signup", async (req, res) => {
-  try {
-    const { name, email, password } = req.body;
-
-    if (!name || !email || !password) {
-      return res.status(400).json({ error: "All fields required" });
-    }
-
-    const exists = await pool.query(
-      "SELECT id FROM users WHERE email = $1",
-      [email]
-    );
-
-    if (exists.rows.length > 0) {
-      return res.status(400).json({ error: "User already exists" });
-    }
-
-    const hashedPassword = await bcrypt.hash(password, 10);
-
-    await pool.query(
-      "INSERT INTO users (id, name, email, password) VALUES ($1,$2,$3,$4)",
-      [crypto.randomUUID(), name, email, hashedPassword]
-    );
-
-    res.status(201).json({
-      message: "User registered successfully",
-    });
-  } catch (err) {
-    console.error("Signup error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-/* ===== LOGIN ===== */
-app.post("/api/auth/login", async (req, res) => {
-  try {
-    const { email, password } = req.body;
-
-    const result = await pool.query(
-      "SELECT * FROM users WHERE email = $1",
-      [email]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    const user = result.rows[0];
-
-    const match = await bcrypt.compare(password, user.password);
-    if (!match) {
-      return res.status(401).json({ error: "Invalid credentials" });
-    }
-
-    const token = jwt.sign(
-      { id: user.id, email: user.email },
-      JWT_SECRET,
-      { expiresIn: "1d" }
-    );
-
-    res.json({
-      message: "Login successful",
-      token,
-    });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ error: "Server error" });
   }
 });
 
@@ -127,18 +56,101 @@ const authMiddleware = (req, res, next) => {
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
-    req.user = decoded;
+    req.user = decoded; // contains id, email, role
     next();
   } catch {
     return res.status(401).json({ error: "Invalid token" });
   }
 };
 
-/* ===== PROFILE ===== */
+/* ===== ADMIN MIDDLEWARE ===== */
+const adminMiddleware = (req, res, next) => {
+  if (req.user.role !== "admin") {
+    return res.status(403).json({ error: "Admin access only" });
+  }
+  next();
+};
+
+/* ===== SIGNUP ===== */
+app.post("/api/auth/signup", async (req, res) => {
+  try {
+    const { name, email, password } = req.body;
+
+    if (!name || !email || !password) {
+      return res.status(400).json({ error: "All fields required" });
+    }
+
+    const exists = await pool.query(
+      "SELECT id FROM users WHERE email=$1",
+      [email]
+    );
+
+    if (exists.rows.length > 0) {
+      return res.status(400).json({ error: "User already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    await pool.query(
+      "INSERT INTO users (id, name, email, password, role) VALUES ($1,$2,$3,$4,'user')",
+      [crypto.randomUUID(), name, email, hashedPassword]
+    );
+
+    res.status(201).json({
+      message: "User registered successfully",
+    });
+  } catch (err) {
+    console.error("Signup error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+/* ===== LOGIN (STEP 3 INCLUDED: ROLE IN TOKEN) ===== */
+app.post("/api/auth/login", async (req, res) => {
+  try {
+    const { email, password } = req.body;
+
+    const result = await pool.query(
+      "SELECT * FROM users WHERE email=$1",
+      [email]
+    );
+
+    if (result.rows.length === 0) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const user = result.rows[0];
+
+    const match = await bcrypt.compare(password, user.password);
+    if (!match) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const token = jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role, // 👈 STEP 3
+      },
+      JWT_SECRET,
+      { expiresIn: "1d" }
+    );
+
+    res.json({
+      message: "Login successful",
+      token,
+    });
+  } catch (err) {
+    console.error("Login error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+/* ===== USER PROFILE ===== */
 app.get("/api/user/profile", authMiddleware, async (req, res) => {
   try {
     const result = await pool.query(
-      "SELECT id, name, email FROM users WHERE id = $1",
+      "SELECT id, name, email, role FROM users WHERE id=$1",
       [req.user.id]
     );
 
@@ -151,6 +163,19 @@ app.get("/api/user/profile", authMiddleware, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+/* ===== ADMIN DASHBOARD ===== */
+app.get(
+  "/api/admin/dashboard",
+  authMiddleware,
+  adminMiddleware,
+  (req, res) => {
+    res.json({
+      message: "Welcome Admin 👑",
+      admin: req.user.email,
+    });
+  }
+);
 
 /* ===== START SERVER ===== */
 app.listen(PORT, () => {
