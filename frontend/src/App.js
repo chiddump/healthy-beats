@@ -1,6 +1,6 @@
 import { useState } from "react";
 
-const API_BASE = "https://healthy-beats-backend.onrender.com";
+const API_BASE = "https://healthy-beats-production.up.railway.app";
 
 function App() {
   const [name, setName] = useState("");
