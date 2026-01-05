@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
 import crypto from "crypto";
 import pool from "./db.js";
+// TEMP product store (resets on restart)
+const products = [];
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -218,4 +220,40 @@ app.get("/api/products", async (req, res) => {
     console.error("Get products error:", err);
     res.status(500).json({ error: "Server error" });
   }
+});
+// ===== ADD PRODUCT (ADMIN ONLY) =====
+app.post("/api/products", authMiddleware, (req, res) => {
+  try {
+    // check admin
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const { name, price, image } = req.body;
+
+    if (!name || !price || !image) {
+      return res.status(400).json({ error: "All fields required" });
+    }
+
+    const product = {
+      id: crypto.randomUUID(),
+      name,
+      price,
+      image,
+    };
+
+    products.push(product);
+
+    res.json({
+      message: "Product added successfully",
+      product,
+    });
+  } catch (err) {
+    console.error("Add product error:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+// ===== GET PRODUCTS (PUBLIC) =====
+app.get("/api/products", (req, res) => {
+  res.json(products);
 });
