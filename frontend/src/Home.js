@@ -1,69 +1,119 @@
 import { Link, useNavigate } from "react-router-dom";
+import "./Home.css";
 
 function Home() {
   const navigate = useNavigate();
-
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
   const logout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role");
+    localStorage.clear();
     navigate("/");
+  };
+
+  // ✅ ADD TO CART
+  const addToCart = () => {
+    if (!token) {
+      alert("Please login to add items to cart");
+      navigate("/login");
+      return;
+    }
+
+    // TEMP cart using localStorage (we’ll move to DB later)
+    const cart = JSON.parse(localStorage.getItem("cart")) || [];
+    const product = {
+      id: "mixed-seeds",
+      name: "Mixed Seeds",
+      price: 199,
+      qty: 1,
+    };
+
+    cart.push(product);
+    localStorage.setItem("cart", JSON.stringify(cart));
+
+    alert("Added to cart ✅");
+  };
+
+  // ✅ BUY NOW
+  const buyNow = () => {
+    if (!token) {
+      alert("Please login to continue");
+      navigate("/login");
+      return;
+    }
+
+    navigate("/checkout", {
+      state: {
+        product: {
+          id: "mixed-seeds",
+          name: "Mixed Seeds",
+          price: 199,
+          qty: 1,
+        },
+      },
+    });
   };
 
   return (
     <div>
-      {/* HEADER */}
-      <div style={{ background: "#2e7d32", color: "white", padding: "20px" }}>
-        <h1>Healthy Beats 🌿</h1>
-        <p>Eat clean. Live strong.</p>
-      </div>
+      {/* NAVBAR */}
+      <nav className="navbar">
+        <h2 className="logo">Healthy Beats 🌿</h2>
 
-      {/* NAV */}
-      <div style={{ padding: "10px" }}>
-        {!token && <Link to="/login">Login</Link>}
+        <div className="nav-links">
+          {!token && (
+            <>
+              <Link to="/login">Login</Link>
+              <Link to="/signup" className="signup-btn">Signup</Link>
+            </>
+          )}
 
-        {token && role === "admin" && (
-          <>
-            {" | "}
-            <Link to="/admin">Admin Dashboard</Link>
-          </>
-        )}
+          {token && role === "admin" && (
+            <>
+              <Link to="/admin/dashboard">Admin Dashboard</Link>
+              <button onClick={logout}>Logout</button>
+            </>
+          )}
 
-        {token && (
-          <>
-            {" | "}
+          {token && role === "user" && (
             <button onClick={logout}>Logout</button>
-          </>
-        )}
-      </div>
+          )}
+        </div>
+      </nav>
+
+      {/* HERO */}
+      <section className="hero">
+        <h1>Eat Clean. Live Strong.</h1>
+        <p>Premium healthy food crafted for your lifestyle</p>
+      </section>
 
       {/* PRODUCTS */}
-      <div style={{ padding: "20px" }}>
+      <section className="products">
         <h2>Our Products</h2>
 
-        <div
-          style={{
-            border: "1px solid #ccc",
-            width: "220px",
-            padding: "10px",
-          }}
-        >
-          <img
-            src="/products/mixed-seeds.jpg"
-            alt="Seed Mix"
-            width="200"
-          />
-          <h3>Seed Mix</h3>
-          <p>₹199</p>
+        <div className="product-grid">
+          <div className="product-card">
+            <img src="/products/mixed-seeds.jpg" alt="Mixed Seeds" />
+            <h3>Mixed Seeds</h3>
+            <p className="price">₹199</p>
+
+            {/* ACTION BUTTONS */}
+            <div className="action-buttons">
+              <button className="cart-btn" onClick={addToCart}>
+                Add to Cart
+              </button>
+              <button className="buy-btn" onClick={buyNow}>
+                Buy Now
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+      </section>
 
       {/* FOOTER */}
-      <div style={{ marginTop: "40px", padding: "10px", background: "#eee" }}>
-        © 2026 Healthy Beats
-      </div>
+      <footer className="footer">
+        © 2026 Healthy Beats • All Rights Reserved
+      </footer>
     </div>
   );
 }

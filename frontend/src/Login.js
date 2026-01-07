@@ -1,43 +1,40 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import axios from "axios";
+import "./Login.css";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const navigate = useNavigate();
+  const [error, setError] = useState("");
 
-  const handleLogin = () => {
-    // TEMP LOGIC
-    if (email === "admin@healthybeats.com" && password === "admin123") {
-      localStorage.setItem("role", "admin");
-      navigate("/admin");
-    } else {
-      localStorage.setItem("role", "user");
-      alert("User logged in (demo)");
-      navigate("/");
+  const login = async () => {
+    try {
+      const res = await axios.post(
+        "http://localhost:5000/api/auth/login",
+        { email, password }
+      );
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("role", res.data.role);
+      window.location.href = "/";
+    } catch (err) {
+      setError(err.response?.data?.error || "Login failed");
     }
   };
 
   return (
-    <div style={{ padding: "40px" }}>
-      <h2>Login</h2>
+    <div className="auth-container">
+      <div className="auth-card">
+        <h2>Welcome Back 🌿</h2>
+        <p>Login to continue</p>
 
-      <input
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
-      <br /><br />
+        <input placeholder="Email" onChange={e => setEmail(e.target.value)} />
+        <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
 
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <br /><br />
+        {error && <p style={{ color: "red" }}>{error}</p>}
 
-      <button onClick={handleLogin}>Login</button>
+        <button onClick={login}>Login</button>
+      </div>
     </div>
   );
 }
