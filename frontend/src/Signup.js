@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Auth.css";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://healthy-beats-production.up.railway.app/";
+const API_URL = process.env.REACT_APP_API_URL || "https://healthy-beats-production.up.railway.app/api/auth/signup";
 
 function Signup() {
   const [name, setName] = useState("");
