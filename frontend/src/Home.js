@@ -3,15 +3,17 @@ import "./Home.css";
 
 function Home() {
   const navigate = useNavigate();
+
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
+  // LOGOUT
   const logout = () => {
     localStorage.clear();
     navigate("/");
   };
 
-  // ✅ ADD TO CART
+  // ADD TO CART
   const addToCart = () => {
     if (!token) {
       alert("Please login to add items to cart");
@@ -19,22 +21,29 @@ function Home() {
       return;
     }
 
-    // TEMP cart using localStorage (we’ll move to DB later)
     const cart = JSON.parse(localStorage.getItem("cart")) || [];
+
     const product = {
       id: "mixed-seeds",
       name: "Mixed Seeds",
       price: 199,
       qty: 1,
+      image: "/products/mixed-seeds.jpg",
     };
 
-    cart.push(product);
-    localStorage.setItem("cart", JSON.stringify(cart));
+    const existing = cart.find((item) => item.id === product.id);
 
+    if (existing) {
+      existing.qty += 1;
+    } else {
+      cart.push(product);
+    }
+
+    localStorage.setItem("cart", JSON.stringify(cart));
     alert("Added to cart ✅");
   };
 
-  // ✅ BUY NOW
+  // BUY NOW
   const buyNow = () => {
     if (!token) {
       alert("Please login to continue");
@@ -49,6 +58,7 @@ function Home() {
           name: "Mixed Seeds",
           price: 199,
           qty: 1,
+          image: "/products/mixed-seeds.jpg",
         },
       },
     });
@@ -64,7 +74,9 @@ function Home() {
           {!token && (
             <>
               <Link to="/login">Login</Link>
-              <Link to="/signup" className="signup-btn">Signup</Link>
+              <Link to="/signup" className="signup-btn">
+                Signup
+              </Link>
             </>
           )}
 
@@ -93,15 +105,19 @@ function Home() {
 
         <div className="product-grid">
           <div className="product-card">
-            <img src="/products/mixed-seeds.jpg" alt="Mixed Seeds" />
+            <img
+              src="/products/mixed-seeds.jpg"
+              alt="Mixed Seeds"
+            />
+
             <h3>Mixed Seeds</h3>
             <p className="price">₹199</p>
 
-            {/* ACTION BUTTONS */}
             <div className="action-buttons">
               <button className="cart-btn" onClick={addToCart}>
                 Add to Cart
               </button>
+
               <button className="buy-btn" onClick={buyNow}>
                 Buy Now
               </button>

@@ -1,20 +1,26 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "./Login.css";
+import "./Auth.css";
 
 function Signup() {
-  const [form, setForm] = useState({ name:"", email:"", password:"" });
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
+  const navigate = useNavigate();
 
-  const signup = async () => {
+  const signup = async (e) => {
+    e.preventDefault();
+    setError("");
+
     try {
       await axios.post(
         "http://localhost:5000/api/auth/signup",
-        form
+        { name, email, password }
       );
-      setSuccess("Signup successful 🎉 Please login");
-      setError("");
+
+      navigate("/login");
     } catch (err) {
       setError(err.response?.data?.error || "Signup failed");
     }
@@ -22,18 +28,41 @@ function Signup() {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
-        <h2>Create Account 🌱</h2>
+      <form className="auth-box" onSubmit={signup}>
+        <h2>Sign Up</h2>
 
-        <input placeholder="Name" onChange={e => setForm({...form, name:e.target.value})} />
-        <input placeholder="Email" onChange={e => setForm({...form, email:e.target.value})} />
-        <input type="password" placeholder="Password" onChange={e => setForm({...form, password:e.target.value})} />
+        {error && <p className="error">{error}</p>}
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        {success && <p style={{ color: "green" }}>{success}</p>}
+        <input
+          type="text"
+          placeholder="Full Name"
+          required
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+        />
 
-        <button onClick={signup}>Signup</button>
-      </div>
+        <input
+          type="email"
+          placeholder="Email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
+
+        <input
+          type="password"
+          placeholder="Password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button type="submit">Create Account</button>
+
+        <p className="switch">
+          Already have an account? <Link to="/login">Login</Link>
+        </p>
+      </form>
     </div>
   );
 }

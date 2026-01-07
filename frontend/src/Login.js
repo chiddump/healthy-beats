@@ -1,13 +1,18 @@
 import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import "./Login.css";
+import "./Auth.css";
 
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const navigate = useNavigate();
 
-  const login = async () => {
+  const login = async (e) => {
+    e.preventDefault();
+    setError("");
+
     try {
       const res = await axios.post(
         "http://localhost:5000/api/auth/login",
@@ -16,7 +21,8 @@ function Login() {
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", res.data.role);
-      window.location.href = "/";
+
+      navigate("/");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
     }
@@ -24,17 +30,33 @@ function Login() {
 
   return (
     <div className="auth-container">
-      <div className="auth-card">
-        <h2>Welcome Back 🌿</h2>
-        <p>Login to continue</p>
+      <form className="auth-box" onSubmit={login}>
+        <h2>Login</h2>
 
-        <input placeholder="Email" onChange={e => setEmail(e.target.value)} />
-        <input type="password" placeholder="Password" onChange={e => setPassword(e.target.value)} />
+        {error && <p className="error">{error}</p>}
 
-        {error && <p style={{ color: "red" }}>{error}</p>}
+        <input
+          type="email"
+          placeholder="Email"
+          required
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
 
-        <button onClick={login}>Login</button>
-      </div>
+        <input
+          type="password"
+          placeholder="Password"
+          required
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+        />
+
+        <button type="submit">Login</button>
+
+        <p className="switch">
+          New user? <Link to="/signup">Create an account</Link>
+        </p>
+      </form>
     </div>
   );
 }

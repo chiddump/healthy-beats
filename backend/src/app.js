@@ -1,3 +1,8 @@
+
+import dotenv from "dotenv";
+dotenv.config({ override: true });
+console.log("DATABASE_URL =", process.env.DATABASE_URL);
+
 import express from "express";
 import cors from "cors";
 import bcrypt from "bcryptjs";
@@ -46,25 +51,27 @@ app.post("/api/auth/signup", async (req, res) => {
       return res.status(400).json({ error: "All fields required" });
     }
 
-    const exists = await pool.query(
-      "SELECT id FROM users WHERE email=$1",
-      [email]
+    const emailLower = email.toLowerCase();
+
+    const checkUser = await pool.query(
+      "SELECT id FROM users WHERE email = $1",
+      [emailLower]
     );
 
-    if (exists.rows.length > 0) {
-      return res.status(400).json({ error: "Email already registered" });
+    if (checkUser.rows.length > 0) {
+      return res.status(400).json({ error: "User already exists" });
     }
 
-    const hashed = await bcrypt.hash(password, 10);
+    const hashedPassword = await bcrypt.hash(password, 10);
 
     await pool.query(
-      "INSERT INTO users (name, email, password) VALUES ($1,$2,$3)",
-      [name, email, hashed]
+      "INSERT INTO users (name, email, password, role) VALUES ($1, $2, $3, $4)",
+      [name, emailLower, hashedPassword, "user"]
     );
 
     res.status(201).json({ message: "Signup successful" });
   } catch (err) {
-    console.error(err);
+    console.error("Signup error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
@@ -76,20 +83,22 @@ app.post("/api/auth/login", async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    const emailLower = email.toLowerCase();
+
     const result = await pool.query(
-      "SELECT * FROM users WHERE email=$1",
-      [email]
+      "SELECT * FROM users WHERE email = $1",
+      [emailLower]
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const user = result.rows[0];
-    const match = await bcrypt.compare(password, user.password);
 
-    if (!match) {
-      return res.status(401).json({ error: "Invalid email or password" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
     const token = jwt.sign(
@@ -104,11 +113,10 @@ app.post("/api/auth/login", async (req, res) => {
       role: user.role
     });
   } catch (err) {
-    console.error(err);
+    console.error("Login error:", err);
     res.status(500).json({ error: "Server error" });
   }
 });
-
 
 // =====================================================
 // ================= AUTH MIDDLEWARE ===================
