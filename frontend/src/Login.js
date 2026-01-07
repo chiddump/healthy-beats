@@ -3,7 +3,10 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Auth.css";
 
-const API_URL = process.env.REACT_APP_API_URL || "https://healthy-beats-production.up.railway.app/https://healthybeats.vercel.app/api/auth/login";
+const res = await axios.post(`${API_URL}/api/auth/login`, {
+  email,
+  password,
+});
 
 function Login() {
   const [email, setEmail] = useState("");
