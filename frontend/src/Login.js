@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Auth.css";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -14,10 +16,10 @@ function Login() {
     setError("");
 
     try {
-      const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
-        { email, password }
-      );
+      const res = await axios.post(`${API_URL}/api/auth/login`, {
+        email,
+        password,
+      });
 
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("role", res.data.role);
@@ -30,7 +32,7 @@ function Login() {
 
   return (
     <div className="auth-container">
-      <form className="auth-box" onSubmit={login}>
+      <form className="auth-card" onSubmit={login}>
         <h2>Login</h2>
 
         {error && <p className="error">{error}</p>}
@@ -53,7 +55,7 @@ function Login() {
 
         <button type="submit">Login</button>
 
-        <p className="switch">
+        <p className="auth-link">
           New user? <Link to="/signup">Create an account</Link>
         </p>
       </form>

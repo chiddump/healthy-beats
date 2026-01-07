@@ -3,17 +3,14 @@ import "./Home.css";
 
 function Home() {
   const navigate = useNavigate();
-
   const token = localStorage.getItem("token");
   const role = localStorage.getItem("role");
 
-  // LOGOUT
   const logout = () => {
     localStorage.clear();
     navigate("/");
   };
 
-  // ADD TO CART
   const addToCart = () => {
     if (!token) {
       alert("Please login to add items to cart");
@@ -43,7 +40,6 @@ function Home() {
     alert("Added to cart ✅");
   };
 
-  // BUY NOW
   const buyNow = () => {
     if (!token) {
       alert("Please login to continue");
@@ -68,30 +64,44 @@ function Home() {
     <div>
       {/* NAVBAR */}
       <nav className="navbar">
-        <h2 className="logo">Healthy Beats 🌿</h2>
+  <h2 className="logo">Healthy Beats 🌿</h2>
 
-        <div className="nav-links">
-          {!token && (
-            <>
-              <Link to="/login">Login</Link>
-              <Link to="/signup" className="signup-btn">
-                Signup
-              </Link>
-            </>
-          )}
+  <div className="nav-links">
+    {/* CART ICON WITH COUNT */}
+    <div className="cart-icon" onClick={() => navigate("/cart")}>
+      🛒
+      <span className="cart-count">
+        {JSON.parse(localStorage.getItem("cart"))?.length || 0}
+      </span>
+    </div>
 
-          {token && role === "admin" && (
-            <>
-              <Link to="/admin/dashboard">Admin Dashboard</Link>
-              <button onClick={logout}>Logout</button>
-            </>
-          )}
+    {/* AUTH LINKS */}
+    {!token && (
+      <>
+        <Link to="/login" className="nav-btn">Login</Link>
+        <Link to="/signup" className="signup-btn">Signup</Link>
+      </>
+    )}
 
-          {token && role === "user" && (
-            <button onClick={logout}>Logout</button>
-          )}
-        </div>
-      </nav>
+    {token && role === "admin" && (
+      <>
+        <Link to="/admin/dashboard" className="nav-btn">
+          Admin
+        </Link>
+        <button className="nav-btn" onClick={logout}>
+          Logout
+        </button>
+      </>
+    )}
+
+    {token && role === "user" && (
+      <button className="nav-btn" onClick={logout}>
+        Logout
+      </button>
+    )}
+  </div>
+</nav>
+
 
       {/* HERO */}
       <section className="hero">
@@ -105,11 +115,7 @@ function Home() {
 
         <div className="product-grid">
           <div className="product-card">
-            <img
-              src="/products/mixed-seeds.jpg"
-              alt="Mixed Seeds"
-            />
-
+            <img src="/products/mixed-seeds.jpg" alt="Mixed Seeds" />
             <h3>Mixed Seeds</h3>
             <p className="price">₹199</p>
 
@@ -117,7 +123,6 @@ function Home() {
               <button className="cart-btn" onClick={addToCart}>
                 Add to Cart
               </button>
-
               <button className="buy-btn" onClick={buyNow}>
                 Buy Now
               </button>
@@ -126,7 +131,6 @@ function Home() {
         </div>
       </section>
 
-      {/* FOOTER */}
       <footer className="footer">
         © 2026 Healthy Beats • All Rights Reserved
       </footer>

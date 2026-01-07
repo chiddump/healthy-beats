@@ -1,72 +1,135 @@
-/* AUTH PAGES COMMON STYLES */
+/* ===============================
+   AUTH PAGES (LOGIN & SIGNUP)
+   =============================== */
 
+* {
+  box-sizing: border-box;
+}
+
+/* BACKGROUND */
 .auth-container {
   min-height: 100vh;
   display: flex;
   justify-content: center;
   align-items: center;
   background: linear-gradient(135deg, #2e7d32, #66bb6a);
+  animation: bgFade 1s ease;
 }
 
+/* CARD */
 .auth-card {
   width: 360px;
-  background: white;
-  padding: 30px;
-  border-radius: 14px;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
-  animation: fadeSlide 0.6s ease;
+  background: #ffffff;
+  padding: 30px 26px;
+  border-radius: 16px;
+  box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+  animation: slideUp 0.6s ease;
 }
 
+/* TITLE */
 .auth-card h2 {
   text-align: center;
-  margin-bottom: 20px;
+  margin-bottom: 22px;
   color: #2e7d32;
+  font-weight: 600;
 }
 
+/* INPUTS */
 .auth-card input {
   width: 100%;
-  padding: 10px 12px;
+  padding: 12px 14px;
   margin-bottom: 14px;
-  border-radius: 8px;
+  border-radius: 10px;
   border: 1px solid #ccc;
   font-size: 14px;
+  outline: none;
+  transition: border 0.3s, box-shadow 0.3s;
 }
 
+.auth-card input:focus {
+  border-color: #2e7d32;
+  box-shadow: 0 0 0 2px rgba(46, 125, 50, 0.15);
+}
+
+/* BUTTON */
 .auth-card button {
   width: 100%;
-  padding: 10px;
+  padding: 12px;
+  margin-top: 10px;
   background: #2e7d32;
-  color: white;
+  color: #ffffff;
   border: none;
-  border-radius: 20px;
+  border-radius: 25px;
   font-size: 15px;
+  font-weight: 500;
   cursor: pointer;
+  transition: background 0.3s, transform 0.2s;
 }
 
 .auth-card button:hover {
   background: #1b5e20;
+  transform: translateY(-1px);
 }
 
-.auth-link {
+/* ERROR MESSAGE */
+.error {
+  background: #ffe6e6;
+  color: #d32f2f;
+  padding: 8px 10px;
+  border-radius: 8px;
+  margin-bottom: 12px;
   text-align: center;
-  margin-top: 15px;
+  font-size: 13px;
+}
+
+/* LINK BELOW FORM */
+.auth-link {
+  margin-top: 16px;
+  text-align: center;
   font-size: 14px;
 }
 
 .auth-link a {
   color: #2e7d32;
+  font-weight: 600;
   text-decoration: none;
-  font-weight: bold;
 }
 
-/* ANIMATION */
-@keyframes fadeSlide {
+.auth-link a:hover {
+  text-decoration: underline;
+}
+
+/* ===============================
+   ANIMATIONS
+   =============================== */
+
+@keyframes slideUp {
   from {
     opacity: 0;
-    transform: translateY(30px);
+    transform: translateY(40px);
   }
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes bgFade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* ===============================
+   MOBILE RESPONSIVE
+   =============================== */
+
+@media (max-width: 420px) {
+  .auth-card {
+    width: 90%;
+    padding: 24px;
   }
 }

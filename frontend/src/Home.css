@@ -194,3 +194,50 @@
     transform: translateY(0);
   }
 }
+/* NAV BUTTONS */
+.nav-btn {
+  text-decoration: none;
+  background: none;
+  border: none;
+  font-size: 15px;
+  cursor: pointer;
+  color: #2e7d32;
+  margin-left: 16px;
+  font-weight: 500;
+}
+
+/* CART ICON */
+.cart-icon {
+  position: relative;
+  font-size: 22px;
+  cursor: pointer;
+  margin-right: 20px;
+}
+
+/* CART COUNT BADGE */
+.cart-count {
+  position: absolute;
+  top: -6px;
+  right: -10px;
+  background: #d32f2f;
+  color: white;
+  font-size: 11px;
+  font-weight: bold;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pop 0.3s ease;
+}
+
+/* BADGE ANIMATION */
+@keyframes pop {
+  0% {
+    transform: scale(0.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}

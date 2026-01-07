@@ -3,6 +3,8 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import "./Auth.css";
 
+const API_URL = process.env.REACT_APP_API_URL || "http://localhost:5000";
+
 function Signup() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -15,11 +17,13 @@ function Signup() {
     setError("");
 
     try {
-      await axios.post(
-        "http://localhost:5000/api/auth/signup",
-        { name, email, password }
-      );
+      await axios.post(`${API_URL}/api/auth/signup`, {
+        name,
+        email,
+        password,
+      });
 
+      alert("Signup successful ✅ Please login");
       navigate("/login");
     } catch (err) {
       setError(err.response?.data?.error || "Signup failed");
@@ -28,7 +32,7 @@ function Signup() {
 
   return (
     <div className="auth-container">
-      <form className="auth-box" onSubmit={signup}>
+      <form className="auth-card" onSubmit={signup}>
         <h2>Sign Up</h2>
 
         {error && <p className="error">{error}</p>}
@@ -59,7 +63,7 @@ function Signup() {
 
         <button type="submit">Create Account</button>
 
-        <p className="switch">
+        <p className="auth-link">
           Already have an account? <Link to="/login">Login</Link>
         </p>
       </form>
