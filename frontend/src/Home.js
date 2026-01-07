@@ -4,7 +4,10 @@ import "./Home.css";
 function Home() {
   const navigate = useNavigate();
   const token = localStorage.getItem("token");
-  const role = localStorage.getItem("role");
+
+  // ✅ CART COUNT (FIXED)
+  const cart = JSON.parse(localStorage.getItem("cart")) || [];
+  const cartCount = cart.reduce((sum, item) => sum + item.qty, 0);
 
   const logout = () => {
     localStorage.clear();
@@ -18,8 +21,7 @@ function Home() {
       return;
     }
 
-    const cart = JSON.parse(localStorage.getItem("cart")) || [];
-
+    const updatedCart = [...cart];
     const product = {
       id: "mixed-seeds",
       name: "Mixed Seeds",
@@ -28,80 +30,43 @@ function Home() {
       image: "/products/mixed-seeds.jpg",
     };
 
-    const existing = cart.find((item) => item.id === product.id);
-
+    const existing = updatedCart.find((p) => p.id === product.id);
     if (existing) {
       existing.qty += 1;
     } else {
-      cart.push(product);
+      updatedCart.push(product);
     }
 
-    localStorage.setItem("cart", JSON.stringify(cart));
-    alert("Added to cart ✅");
+    localStorage.setItem("cart", JSON.stringify(updatedCart));
+    window.location.reload(); // refresh count
   };
 
   const buyNow = () => {
     if (!token) {
-      alert("Please login to continue");
       navigate("/login");
       return;
     }
-
-    navigate("/checkout", {
-      state: {
-        product: {
-          id: "mixed-seeds",
-          name: "Mixed Seeds",
-          price: 199,
-          qty: 1,
-          image: "/products/mixed-seeds.jpg",
-        },
-      },
-    });
+    navigate("/checkout");
   };
 
   return (
     <div>
       {/* NAVBAR */}
       <nav className="navbar">
-  <h2 className="logo">Healthy Beats 🌿</h2>
+        <h2 className="logo">Healthy Beats 🌿</h2>
 
-  <div className="nav-links">
-    {/* CART ICON WITH COUNT */}
-    <div className="cart-icon" onClick={() => navigate("/cart")}>
-      🛒
-      <span className="cart-count">
-        {JSON.parse(localStorage.getItem("cart"))?.length || 0}
-      </span>
-    </div>
+        <div className="nav-right">
+          {/* CART */}
+          <div className="cart-icon" onClick={() => navigate("/cart")}>
+            🛒
+            {cartCount > 0 && <span className="cart-badge">{cartCount}</span>}
+          </div>
 
-    {/* AUTH LINKS */}
-    {!token && (
-      <>
-        <Link to="/login" className="nav-btn">Login</Link>
-        <Link to="/signup" className="signup-btn">Signup</Link>
-      </>
-    )}
-
-    {token && role === "admin" && (
-      <>
-        <Link to="/admin/dashboard" className="nav-btn">
-          Admin
-        </Link>
-        <button className="nav-btn" onClick={logout}>
-          Logout
-        </button>
-      </>
-    )}
-
-    {token && role === "user" && (
-      <button className="nav-btn" onClick={logout}>
-        Logout
-      </button>
-    )}
-  </div>
-</nav>
-
+          {/* AUTH */}
+          {!token && <Link to="/login">Login</Link>}
+          {token && <button className="logout-btn" onClick={logout}>Logout</button>}
+        </div>
+      </nav>
 
       {/* HERO */}
       <section className="hero">
@@ -113,20 +78,14 @@ function Home() {
       <section className="products">
         <h2>Our Products</h2>
 
-        <div className="product-grid">
-          <div className="product-card">
-            <img src="/products/mixed-seeds.jpg" alt="Mixed Seeds" />
-            <h3>Mixed Seeds</h3>
-            <p className="price">₹199</p>
+        <div className="product-card">
+          <img src="/products/mixed-seeds.jpg" alt="Mixed Seeds" />
+          <h3>Mixed Seeds</h3>
+          <p className="price">₹199</p>
 
-            <div className="action-buttons">
-              <button className="cart-btn" onClick={addToCart}>
-                Add to Cart
-              </button>
-              <button className="buy-btn" onClick={buyNow}>
-                Buy Now
-              </button>
-            </div>
+          <div className="action-buttons">
+            <button className="cart-btn" onClick={addToCart}>Add to Cart</button>
+            <button className="buy-btn" onClick={buyNow}>Buy Now</button>
           </div>
         </div>
       </section>
